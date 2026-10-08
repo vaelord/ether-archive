@@ -66,14 +66,14 @@ function normalizeWallet(wallet) {
 }
 
 function loadWallets() {
-  // Render production
-  const renderFilesExist = renderWalletPaths.every(
+  // Render Secret Files
+  const existingRenderFiles = renderWalletPaths.filter(
     (filePath) => fs.existsSync(filePath)
   );
 
-  if (renderFilesExist) {
+  if (existingRenderFiles.length > 0) {
     try {
-      const wallets = renderWalletPaths.flatMap(
+      const wallets = existingRenderFiles.flatMap(
         (filePath) => {
           const data = fs.readFileSync(
             filePath,
@@ -85,6 +85,10 @@ function loadWallets() {
             .map(normalizeWallet)
             .filter(Boolean);
         }
+      );
+
+      console.log(
+        `Loaded ${wallets.length} wallets from Render Secret Files.`
       );
 
       return wallets;
@@ -107,7 +111,14 @@ function loadWallets() {
 
     const wallets = JSON.parse(data);
 
-    return wallets.map(normalizeWallet);
+    const normalizedWallets =
+      wallets.map(normalizeWallet);
+
+    console.log(
+      `Loaded ${normalizedWallets.length} wallets from local file.`
+    );
+
+    return normalizedWallets;
   } catch (error) {
     console.error(
       "Local wallet file error:",
@@ -159,5 +170,15 @@ app.post(
 app.listen(PORT, () => {
   console.log(
     `Ether Archive backend running on port ${PORT}`
+  );
+
+  console.log(
+    "Render wallet file 1:",
+    fs.existsSync("/etc/secrets/wallets-1.txt")
+  );
+
+  console.log(
+    "Render wallet file 2:",
+    fs.existsSync("/etc/secrets/wallets-2.txt")
   );
 });
