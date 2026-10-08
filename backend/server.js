@@ -129,6 +129,26 @@ function loadWallets() {
   }
 }
 
+app.get("/api/debug/wallets", (req, res) => {
+  const fileStatus = renderWalletPaths.map((filePath) => ({
+    path: filePath,
+    exists: fs.existsSync(filePath),
+    size: fs.existsSync(filePath)
+      ? fs.statSync(filePath).size
+      : 0,
+  }));
+
+  const wallets = loadWallets();
+
+  res.json({
+    fileStatus,
+    walletCount: wallets.length,
+    testWallet: wallets.includes(
+      "0xc3bd04aac2fb2ba58efd7eb673e544e0b80de770"
+    ),
+  });
+});
+
 app.post(
   "/api/presale/check",
   (req, res) => {
