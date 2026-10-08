@@ -1,0 +1,19 @@
+{
+  "name": "Ether Archive",
+  "short_name": "Ether Archive",
+  "description": "A mathematical archive of Ethereum.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/logos/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "x-logo": "/logos/x.svg",
+  "opensea-logo": "/logos/opensea.svg"
+}

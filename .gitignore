@@ -1,0 +1,14 @@
+node_modules/
+dist/
+
+.env
+.env.*
+!.env.example
+
+backend/.env
+backend/data/wallets.json
+
+*.log
+
+.DS_Store
+Thumbs.db
