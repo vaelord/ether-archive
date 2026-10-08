@@ -14,25 +14,45 @@ const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const walletsPath = path.join(
+const localWalletsPath = path.join(
   __dirname,
   "data",
   "wallets.json"
 );
 
-const allowedOrigin =
-  process.env.FRONTEND_URL || "http://localhost:4173";
+const renderWalletPaths = [
+  "/etc/secrets/wallets-1.txt",
+  "/etc/secrets/wallets-2.txt",
+];
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: function (origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error("Not allowed by CORS")
+      );
+    },
   })
 );
 
 app.use(express.json());
-
-
-/* HEALTH CHECK */
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -41,20 +61,56 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-
-/* LOAD WALLETS */
+function normalizeWallet(wallet) {
+  return wallet.trim().toLowerCase();
+}
 
 function loadWallets() {
+  // Render production
+  const renderFilesExist = renderWalletPaths.every(
+    (filePath) => fs.existsSync(filePath)
+  );
+
+  if (renderFilesExist) {
+    try {
+      const wallets = renderWalletPaths.flatMap(
+        (filePath) => {
+          const data = fs.readFileSync(
+            filePath,
+            "utf8"
+          );
+
+          return data
+            .split(/\r?\n/)
+            .map(normalizeWallet)
+            .filter(Boolean);
+        }
+      );
+
+      return wallets;
+    } catch (error) {
+      console.error(
+        "Render wallet files error:",
+        error
+      );
+
+      return [];
+    }
+  }
+
+  // Local development
   try {
     const data = fs.readFileSync(
-      walletsPath,
+      localWalletsPath,
       "utf8"
     );
 
-    return JSON.parse(data);
+    const wallets = JSON.parse(data);
+
+    return wallets.map(normalizeWallet);
   } catch (error) {
     console.error(
-      "Wallet file error:",
+      "Local wallet file error:",
       error
     );
 
@@ -62,20 +118,9 @@ function loadWallets() {
   }
 }
 
-
-/* NORMALIZE */
-
-function normalizeWallet(wallet) {
-  return wallet.trim().toLowerCase();
-}
-
-
-/* PRESALE CHECK */
-
 app.post(
   "/api/presale/check",
   (req, res) => {
-
     const { wallet } = req.body;
 
     if (!wallet) {
@@ -102,13 +147,8 @@ app.post(
 
     const wallets = loadWallets();
 
-    const normalizedWallets =
-      wallets.map(normalizeWallet);
-
     const eligible =
-      normalizedWallets.includes(
-        normalizedWallet
-      );
+      wallets.includes(normalizedWallet);
 
     return res.json({
       eligible,
@@ -116,11 +156,8 @@ app.post(
   }
 );
 
-
-/* START SERVER */
-
 app.listen(PORT, () => {
   console.log(
-    `Ether Archive backend running on http://localhost:${PORT}`
+    `Ether Archive backend running on port ${PORT}`
   );
 });
